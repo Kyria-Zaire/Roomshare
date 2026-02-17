@@ -7,6 +7,31 @@ import { Loader2, AlertCircle, ArrowLeft, Mail, CheckCircle2 } from "lucide-reac
 import { toast } from "sonner";
 import apiClient from "@/lib/apiClient";
 
+// ─── Constantes ───────────────────────────────────────────────
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const MESSAGES = {
+  emailRequired: "L'email est requis",
+  emailInvalid: "Format d'email invalide",
+  successToast: "Email de réinitialisation envoyé !",
+  fallbackError: "Une erreur est survenue. Veuillez réessayer.",
+} as const;
+
+// ─── Helpers ──────────────────────────────────────────────────
+function validateEmail(email: string): string | null {
+  if (!email.trim()) return MESSAGES.emailRequired;
+  if (!EMAIL_REGEX.test(email)) return MESSAGES.emailInvalid;
+  return null;
+}
+
+type ApiError = { response?: { data?: { message?: string } } };
+
+function extractApiError(err: unknown): string {
+  const axiosErr = err as ApiError;
+  return axiosErr.response?.data?.message ?? MESSAGES.fallbackError;
+}
+
+// ─── Composant ────────────────────────────────────────────────
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -14,47 +39,41 @@ export default function ForgotPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
     setErrors({});
 
-    if (!email.trim()) {
-      setErrors({ email: "L'email est requis" });
-      return;
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErrors({ email: "Format d'email invalide" });
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setErrors({ email: emailError });
       return;
     }
 
     setLoading(true);
-
     try {
       const { data } = await apiClient.post("/auth/forgot-password", { email });
-      
+
       // En développement, le token peut être retourné pour faciliter les tests
       if (data.data?.reset_token) {
         setResetToken(data.data.reset_token);
       }
-      
+
       setSuccess(true);
-      toast.success("Email de réinitialisation envoyé !");
+      toast.success(MESSAGES.successToast);
     } catch (err: unknown) {
-      const axiosErr = err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } };
-      const msg =
-        axiosErr.response?.data?.message ||
-        "Une erreur est survenue. Veuillez réessayer.";
-      setErrors({ general: msg });
+      setErrors({ general: extractApiError(err) });
     } finally {
       setLoading(false);
     }
   };
 
+  const inputClassName = errors.email
+    ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
+    : "border-border focus:border-accent focus:ring-2 focus:ring-accent/20";
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
         <div className="mb-8 flex justify-center">
           <Logo size={80} />
         </div>
@@ -76,12 +95,12 @@ export default function ForgotPasswordPage() {
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
+                    onChange={(event) => {
+                      setEmail(event.target.value);
                       if (errors.email) setErrors({ ...errors, email: "" });
                     }}
                     placeholder="vous@email.com"
-                    className={`w-full rounded-[var(--radius-button)] border bg-background pl-10 pr-4 py-3 text-sm outline-none transition-colors ${errors.email ? "border-error focus:border-error focus:ring-2 focus:ring-error/20" : "border-border focus:border-accent focus:ring-2 focus:ring-accent/20"}`}
+                    className={`w-full rounded-[var(--radius-button)] border bg-background pl-10 pr-4 py-3 text-sm outline-none transition-colors ${inputClassName}`}
                   />
                 </div>
                 {errors.email && (
@@ -120,7 +139,7 @@ export default function ForgotPasswordPage() {
             <p className="mb-6 text-sm text-muted-foreground">
               Si cet email existe dans notre système, vous recevrez un lien de réinitialisation.
             </p>
-            
+
             {/* MVP : Afficher le token pour test (à retirer en production) */}
             {resetToken && (
               <div className="mb-6 rounded-[var(--radius-card)] border border-accent/30 bg-accent-light/30 p-4">
@@ -144,7 +163,6 @@ export default function ForgotPasswordPage() {
             </Link>
           </div>
         )}
-
       </div>
     </div>
   );

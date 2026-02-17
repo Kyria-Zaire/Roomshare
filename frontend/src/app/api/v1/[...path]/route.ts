@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * Catch-all API proxy route handler.
+ * Catch-all API proxy route handler — Infrastructure Layer.
  *
- * Proxifie toutes les requetes /api/v1/* vers le backend Laravel (Nginx Docker).
- * Elimine les problemes de CORS et de rewrites Turbopack.
+ * Ce fichier est volontairement un proxy d'infrastructure, pas une couche métier.
+ * Il proxifie toutes les requêtes /api/v1/* vers le backend Laravel (Nginx/Docker)
+ * afin d'éliminer les problèmes de CORS et les bugs de rewrite Turbopack.
+ *
+ * Pattern : Next.js API Route as reverse-proxy (documented pattern).
+ * Toute logique métier appartient au backend Laravel — jamais ici.
+ * Les 5 exports HTTP (GET/POST/PUT/DELETE/PATCH) sont requis par Next.js
+ * pour que le catch-all route handler intercepte toutes les méthodes HTTP.
  */
 
 const BACKEND_URL = process.env.API_BACKEND_URL || "http://localhost";

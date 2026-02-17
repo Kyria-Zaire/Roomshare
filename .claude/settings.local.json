@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose exec php composer:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(dir:*)",
+      "Bash(Remove-Item -Force \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\app\\\\Models\\\\User.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\database\\\\factories\\\\UserFactory.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\database\\\\migrations\\\\0001_01_01_000000_create_users_table.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\database\\\\migrations\\\\0001_01_01_000002_create_jobs_table.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\config\\\\auth.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\config\\\\session.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\config\\\\mail.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\routes\\\\web.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\routes\\\\console.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\tests\\\\Feature\\\\ExampleTest.php\", \"c:\\\\Users\\\\kyria\\\\roomshare\\\\backend\\\\tests\\\\Unit\\\\ExampleTest.php\")",
+      "Bash(node -e:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(docker-compose:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(php artisan:*)",
+      "Bash(docker compose exec:*)",
+      "Bash(php -l:*)",
+      "Bash(php -r:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(docker compose up:*)",
+      "Bash(docker ps:*)"
+    ]
+  }
+}

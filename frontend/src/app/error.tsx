@@ -1,22 +1,18 @@
 "use client";
 
-import { useEffect } from "react";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 
+const ERROR_ICON_SIZE = 40;
+
 export default function ErrorPage({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  useEffect(() => {
-    console.error("[Roomshare]", error);
-  }, [error]);
-
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 px-4 text-center">
-      <AlertTriangle size={40} className="text-muted-foreground" />
+      <AlertTriangle size={ERROR_ICON_SIZE} className="text-muted-foreground" />
       <div>
         <h1 className="text-xl font-bold text-foreground">
           Une erreur est survenue

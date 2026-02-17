@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 import { Loader2, AlertCircle, ArrowLeft, Mail, CheckCircle2 } from "lucide-react";
@@ -9,7 +8,6 @@ import { toast } from "sonner";
 import apiClient from "@/lib/apiClient";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -83,11 +81,7 @@ export default function ForgotPasswordPage() {
                       if (errors.email) setErrors({ ...errors, email: "" });
                     }}
                     placeholder="vous@email.com"
-                    className={`w-full rounded-[var(--radius-button)] border bg-background pl-10 pr-4 py-3 text-sm outline-none transition-colors ${
-                      errors.email
-                        ? "border-error focus:border-error focus:ring-2 focus:ring-error/20"
-                        : "border-border focus:border-accent focus:ring-2 focus:ring-accent/20"
-                    }`}
+                    className={`w-full rounded-[var(--radius-button)] border bg-background pl-10 pr-4 py-3 text-sm outline-none transition-colors ${errors.email ? "border-error focus:border-error focus:ring-2 focus:ring-error/20" : "border-border focus:border-accent focus:ring-2 focus:ring-accent/20"}`}
                   />
                 </div>
                 {errors.email && (
@@ -151,11 +145,6 @@ export default function ForgotPasswordPage() {
           </div>
         )}
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          <Link href="/login" className="font-medium text-accent hover:underline">
-            Retour à la connexion
-          </Link>
-        </p>
       </div>
     </div>
   );

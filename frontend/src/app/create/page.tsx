@@ -18,7 +18,6 @@ import {
   Euro,
   Maximize,
   Bed,
-  Sparkles,
   AlertCircle,
   Info,
 } from "lucide-react";
@@ -27,11 +26,17 @@ import { roomService } from "@/lib/apiClient";
 import apiClient from "@/lib/apiClient";
 import { useAuth } from "@/lib/authContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { Badge } from "@/components/ui/Badge";
 import { toast } from "sonner";
 import { MAP_STYLE_URL } from "@/lib/mapConfig";
 import "maplibre-gl/dist/maplibre-gl.css";
 const REIMS = { lat: 49.2530, lng: 3.5713 };
+
+// Retourne la classe CSS d'une étape selon son état (complétée / active / inactive)
+function getStepClass(isCompleted: boolean, isActive: boolean): string {
+  if (isCompleted) return "border-accent bg-accent text-accent-foreground";
+  if (isActive) return "border-accent bg-accent-light text-accent";
+  return "border-border bg-background text-muted-foreground";
+}
 
 const AMENITY_OPTIONS = [
   { id: "wifi", label: "WiFi" },
@@ -191,8 +196,7 @@ function PublishPageContent() {
 
       toast.success("Annonce publiée avec succès !");
       router.push("/");
-    } catch (error: unknown) {
-      console.error("Erreur publication:", error);
+    } catch {
       toast.error("Erreur lors de la publication. Veuillez réessayer.");
     } finally {
       setPublishing(false);
@@ -235,13 +239,7 @@ function PublishPageContent() {
                           }`}
                         />
                         <div
-                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
-                            isCompleted
-                              ? "border-accent bg-accent text-accent-foreground"
-                              : isActive
-                              ? "border-accent bg-accent-light text-accent"
-                              : "border-border bg-background text-muted-foreground"
-                          }`}
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${getStepClass(isCompleted, isActive)}`}
                         >
                           {isCompleted ? (
                             <Check size={14} />
@@ -622,7 +620,7 @@ function PublishPageContent() {
             {imageUrls.length > 0 && (
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {imageUrls.map((url, i) => (
-                  <div key={i} className="group relative aspect-square overflow-hidden rounded-[var(--radius-card)] border border-border bg-muted">
+                  <div key={url} className="group relative aspect-square overflow-hidden rounded-[var(--radius-card)] border border-border bg-muted">
                     <img src={url} alt={`Photo ${i + 1}`} className="h-full w-full object-cover" />
                     {i === 0 && (
                       <div className="absolute left-2 top-2 rounded-full bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground">

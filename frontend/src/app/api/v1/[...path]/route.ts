@@ -13,14 +13,11 @@ async function proxyRequest(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
-  const startTime = Date.now();
   try {
     const { path } = await params;
     const apiPath = path.join("/");
     const url = new URL(request.url);
     const targetUrl = `${BACKEND_URL}/api/v1/${apiPath}${url.search}`;
-
-    console.log(`[API Proxy] ${request.method} ${targetUrl}`);
 
     // Forward headers (sauf host)
     const headers = new Headers();
@@ -41,9 +38,6 @@ async function proxyRequest(
       signal: AbortSignal.timeout(30000),
     });
 
-    const duration = Date.now() - startTime;
-    console.log(`[API Proxy] Response ${response.status} in ${duration}ms`);
-
     // Forward la reponse du backend
     const data = await response.text();
     return new NextResponse(data, {
@@ -55,16 +49,14 @@ async function proxyRequest(
       },
     });
   } catch (error: unknown) {
-    const duration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error(`[API Proxy] Erreur après ${duration}ms:`, errorMessage);
-    
+
     // Retourner une erreur JSON valide pour Axios
     return NextResponse.json(
-      { 
-        success: false, 
-        message: errorMessage.includes("timeout") 
-          ? "Le backend met trop de temps à répondre." 
+      {
+        success: false,
+        message: errorMessage.includes("timeout")
+          ? "Le backend met trop de temps à répondre."
           : "Backend non disponible.",
         error: errorMessage,
       },
@@ -73,6 +65,7 @@ async function proxyRequest(
   }
 }
 
+// Next.js HTTP method handlers — tous nécessaires pour le proxy catch-all
 export const GET = proxyRequest;
 export const POST = proxyRequest;
 export const PUT = proxyRequest;

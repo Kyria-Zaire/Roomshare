@@ -44,6 +44,7 @@ class ReimsStudentScraper implements ScraperInterface
             $images = $node->filter('.annonce-img')->each(fn(Crawler $img) => $img->attr('src') ?? '');
             $images = array_filter($images);
 
+            // @security: pattern constant (/[^\d]/), remplacement vide, pas de modificateur /e — aucun risque RCE
             $price = (int) preg_replace('/[^\d]/', '', $priceRaw);
 
             return new ScrapedRoomData(

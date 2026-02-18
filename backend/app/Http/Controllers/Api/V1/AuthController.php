@@ -65,6 +65,7 @@ class AuthController extends Controller
         ];
 
         if (!empty($validated['phone'])) {
+            // @security: pattern constant, remplacement littéral, pas de modificateur /e — aucun risque RCE
             $payload['phone'] = preg_replace('/\s+/', ' ', trim($validated['phone']));
         }
 

@@ -24,6 +24,7 @@ class UserController extends Controller
         if ($name === null || $name === '') {
             return '';
         }
+        // @security: pattern constant, remplacement littéral, pas de modificateur /e — aucun risque RCE
         $s = preg_replace('/\s+/', ' ', trim($name));
         return strtolower($s);
     }

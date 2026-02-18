@@ -41,4 +41,8 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // URL frontend — à lire via config('services.frontend_url') dans les contrôleurs
+    // Ne jamais appeler env('FRONTEND_URL') directement dans le code (cassé après config:cache)
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
 ];

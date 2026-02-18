@@ -44,7 +44,8 @@ class StripeController extends Controller
     public function createCheckoutSession(Request $request): JsonResponse
     {
         // Configurer la clé API avant toute action Stripe
-        Stripe::setApiKey(env('STRIPE_SECRET') ?: config('services.stripe.secret'));
+        // config() résiste au config:cache contrairement à env() appelé directement
+        Stripe::setApiKey(config('services.stripe.secret'));
 
         $validated = $request->validate([
             'plan_type' => 'required|string|in:pass_day,pass_week,pass_month,pro_sub',
@@ -57,7 +58,7 @@ class StripeController extends Controller
         }
 
         $userId = (string) $user->_id;
-        $frontendUrl = rtrim(config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000')), '/');
+        $frontendUrl = rtrim(config('services.frontend_url', 'http://localhost:3000'), '/');
         $successUrl = $frontendUrl . '/profile?success=true';
         $cancelUrl = $frontendUrl . '/profile?canceled=true';
 

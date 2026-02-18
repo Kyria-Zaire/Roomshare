@@ -69,4 +69,36 @@ class MessageController extends Controller
             'message' => 'Message envoyé.',
         ], Response::HTTP_CREATED);
     }
+
+    /**
+     * DELETE /api/v1/messages/{id}
+     *
+     * Supprime un message si l'utilisateur en est l'auteur.
+     * Retourne 404 si introuvable ou si l'utilisateur n'en est pas l'auteur.
+     */
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        if (! preg_match('/^[0-9a-f]{24}$/i', $id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ID de message invalide.',
+            ], 400);
+        }
+
+        $userId = (string) $request->user()->_id;
+
+        $deleted = $this->messageRepo->deleteOwnMessage($id, $userId);
+
+        if (! $deleted) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Message introuvable ou vous n\'en êtes pas l\'auteur.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Message supprimé.',
+        ]);
+    }
 }

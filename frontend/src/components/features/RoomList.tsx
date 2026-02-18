@@ -14,11 +14,14 @@ interface RoomListProps {
   sortBy?: "price-asc" | "price-desc" | "newest" | "default";
   viewMode?: "grid" | "list";
   onCountChange?: (count: number) => void;
+  /** Rooms pré-chargées côté serveur (SSR) pour le rendu initial sans flash */
+  initialRooms?: Room[];
 }
 
 /**
  * Molécule Feature — Liste des annonces de colocation.
  * Gère le data fetching, le loading state, les filtres et le tri.
+ * Accepte initialRooms pour hydrater depuis le SSR sans skeleton visible.
  */
 export function RoomList({
   searchQuery = "",
@@ -28,9 +31,11 @@ export function RoomList({
   sortBy = "default",
   viewMode = "grid",
   onCountChange,
+  initialRooms,
 }: RoomListProps) {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [rooms, setRooms] = useState<Room[]>(initialRooms ?? []);
+  // Si des rooms SSR sont fournies, pas besoin du skeleton au premier rendu
+  const [loading, setLoading] = useState(initialRooms === undefined);
   const [error, setError] = useState<string | null>(null);
 
   // Charger les annonces

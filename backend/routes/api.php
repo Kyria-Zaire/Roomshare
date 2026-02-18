@@ -1,15 +1,16 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\VerificationController as AdminVerificationController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\MessageController;
 use App\Http\Controllers\Api\V1\RoomController;
+use App\Http\Controllers\Api\V1\StripeController;
 use App\Http\Controllers\Api\V1\UploadController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\UserProfileController;
 use App\Http\Controllers\Api\V1\UserVerificationController;
-use App\Http\Controllers\Api\V1\StripeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -68,6 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/conversations', [ConversationController::class, 'store'])->name('conversations.store');
     Route::get('/conversations/{id}', [ConversationController::class, 'show'])->name('conversations.show');
     Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
+    Route::delete('/messages/{id}', [MessageController::class, 'destroy'])->name('messages.destroy');
     
     // Vérification d'identité
     Route::post('/user/verify-request', [UserVerificationController::class, 'store'])->name('user.verify-request');
@@ -83,6 +85,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('/user/settings', [UserProfileController::class, 'updateSettings'])->name('user.settings.update');
     Route::get('/user/export', [UserProfileController::class, 'export'])->name('user.export');
     Route::post('/user/avatar', [UserProfileController::class, 'uploadAvatar'])->name('user.avatar');
+});
+
+// ─── Routes admin (auth + rôle admin) ────────────────────────
+Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/verifications', [AdminVerificationController::class, 'index'])->name('admin.verifications.index');
+    Route::post('/verifications/{id}/approve', [AdminVerificationController::class, 'approve'])->name('admin.verifications.approve');
+    Route::post('/verifications/{id}/reject', [AdminVerificationController::class, 'reject'])->name('admin.verifications.reject');
 });
 
 // ─── Routes publiques ────────────────────────────────────────

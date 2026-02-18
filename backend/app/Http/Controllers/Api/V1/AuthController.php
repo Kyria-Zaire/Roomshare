@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Mail\ResetPasswordMail;
+use App\Mail\WelcomeMail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,7 +57,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
-            'role' => $validated['role'],
+            // 'role' → hors fillable, affecté via setRole() après create()
             'terms_accepted' => $validated['terms_accepted'],
             'terms_accepted_at' => $validated['terms_accepted'] ? $now : null,
             'privacy_accepted' => $validated['privacy_accepted'],
@@ -70,6 +71,15 @@ class AuthController extends Controller
         }
 
         $user = User::create($payload);
+        // Affectation du rôle via méthode dédiée (hors mass-assignment)
+        $user->setRole($validated['role']);
+
+        // Email de bienvenue (silencieux — l'inscription ne doit pas échouer si le mail plante)
+        try {
+            Mail::to($user->email)->send(new WelcomeMail($user->name));
+        } catch (\Throwable) {
+            // Log implicite via le handler global — ne pas bloquer l'inscription
+        }
 
         $token = $user->createToken('auth')->plainTextToken;
 

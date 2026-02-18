@@ -44,10 +44,10 @@ class UserVerificationController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        // Validation des fichiers
+        // Validation des fichiers — PDF explicitement exclu (risque malware/exploit)
         $validated = $request->validate([
-            'identity_document' => 'required|file|mimes:jpeg,jpg,png,pdf|max:10240', // 10MB max
-            'residence_document' => 'required|file|mimes:jpeg,jpg,png,pdf|max:10240', // 10MB max
+            'identity_document' => 'required|file|mimes:jpeg,jpg,png|max:10240', // 10MB max, images uniquement
+            'residence_document' => 'required|file|mimes:jpeg,jpg,png|max:10240', // 10MB max, images uniquement
         ]);
 
         try {

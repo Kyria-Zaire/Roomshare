@@ -7,7 +7,7 @@ interface AuthUser {
   id: string;
   name: string;
   email: string;
-  role?: "tenant" | "owner";
+  role?: "tenant" | "owner" | "admin";
   verification_status?: "none" | "pending" | "verified" | "rejected";
   is_pro?: boolean;
   pass_expires_at?: string | null;

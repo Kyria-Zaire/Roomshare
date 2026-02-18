@@ -5,6 +5,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: roomshare-nginx
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
@@ -23,8 +24,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: roomshare-php
+    restart: unless-stopped
     volumes:
       - ./backend:/var/www/html
+      # Volume nommé pour persister les uploads utilisateurs (avatars, photos d'annonces)
+      - roomshare_uploads:/var/www/html/storage/app/public
     environment:
       - DB_CONNECTION=mongodb
       - DB_HOST=mongodb
@@ -80,6 +84,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: roomshare-frontend
+    restart: unless-stopped
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -87,6 +92,8 @@ services:
     # Port non expose directement, Nginx fait le proxy
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost/api/v1
+      # URL interne Docker pour les fetch SSR (Server Components → nginx, sans passer par internet)
+      - NEXT_INTERNAL_API_URL=http://nginx/api/v1
       - NEXT_PUBLIC_REVERB_HOST=localhost
       - NEXT_PUBLIC_REVERB_PORT=8080
       - NEXT_PUBLIC_REVERB_SCHEME=http
@@ -99,6 +106,7 @@ services:
   mongodb:
     image: mongo:7
     container_name: roomshare-mongodb
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
@@ -108,6 +116,9 @@ services:
 
 volumes:
   mongodb_data:
+  # Volume nommé pour les uploads utilisateurs (avatars, photos d'annonces)
+  # Persistant entre les redémarrages et indépendant du bind mount ./backend
+  roomshare_uploads:
 
 networks:
   roomshare:

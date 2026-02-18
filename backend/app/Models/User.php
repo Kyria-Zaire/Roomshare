@@ -29,7 +29,8 @@ class User extends MongoUser
         'password',
         'password_reset_token',
         'password_reset_expires_at',
-        'role',
+        // 'role'   → HORS fillable : utiliser setRole() pour prévenir l'escalade de privilèges
+        // 'is_pro' → HORS fillable : utiliser setProStatus() pour prévenir la fraude
         'bio',
         'phone',
         'avatar_path',
@@ -38,11 +39,11 @@ class User extends MongoUser
         'privacy_accepted',
         'privacy_accepted_at',
         'verification_status',
+        'verification_reject_reason',
         'identity_document_path',
         'residence_document_path',
         'notify_messages',
         'notify_annonces',
-        'is_pro',
         'pass_expires_at',
         'subscription',
     ];
@@ -97,5 +98,34 @@ class User extends MongoUser
             return false;
         }
         return $this->pass_expires_at->isFuture();
+    }
+
+    /**
+     * Définit le rôle de l'utilisateur via affectation directe (hors mass-assignment).
+     *
+     * Ne jamais appeler $user->fill(['role' => ...]) ou $user->update(['role' => ...]).
+     * Cette méthode est le seul point d'entrée autorisé pour changer le rôle.
+     *
+     * @throws \InvalidArgumentException Si le rôle n'est pas dans la liste blanche.
+     */
+    public function setRole(string $role): void
+    {
+        if (! in_array($role, ['tenant', 'owner', 'admin'], true)) {
+            throw new \InvalidArgumentException("Rôle non autorisé : {$role}");
+        }
+        $this->role = $role;
+        $this->save();
+    }
+
+    /**
+     * Active ou révoque l'accès Pro via affectation directe (hors mass-assignment).
+     *
+     * Ne jamais appeler $user->update(['is_pro' => true]).
+     * Utiliser setProStatus(true) / setProStatus(false).
+     */
+    public function setProStatus(bool $isPro): void
+    {
+        $this->is_pro = $isPro;
+        $this->save();
     }
 }

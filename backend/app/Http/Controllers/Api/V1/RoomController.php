@@ -160,15 +160,10 @@ class RoomController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $room = $this->roomRepository->findById($id);
-        $userId = (string) $request->user()->_id;
 
-        // Vérifier que l'utilisateur est le propriétaire
-        if ($room->owner_id !== $userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vous n\'êtes pas autorisé à modifier cette annonce.',
-            ], 403);
-        }
+        // La Policy RoomPolicy::update() vérifie role === 'owner' ET owner_id === user._id
+        // Remplace le check manuel qui ignorait la vérification du rôle (faille #4)
+        $this->authorize('update', $room);
 
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
@@ -205,15 +200,9 @@ class RoomController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         $room = $this->roomRepository->findById($id);
-        $userId = (string) $request->user()->_id;
 
-        // Vérifier que l'utilisateur est le propriétaire
-        if ($room->owner_id !== $userId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Vous n\'êtes pas autorisé à supprimer cette annonce.',
-            ], 403);
-        }
+        // La Policy RoomPolicy::delete() vérifie role === 'owner' ET owner_id === user._id
+        $this->authorize('delete', $room);
 
         $this->roomRepository->delete($id);
 

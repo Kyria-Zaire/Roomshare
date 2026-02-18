@@ -28,6 +28,9 @@ chmod g+s /var/www/html/storage/app/private 2>/dev/null || true
 # Lien symbolique pour stockage public (avatars, etc.)
 php artisan storage:link 2>/dev/null || true
 
+# Exécuter les migrations au démarrage du conteneur (--force requis hors environnement local)
+php artisan migrate --force 2>/dev/null || true
+
 # Run package discovery & cache config at runtime (env vars available)
 php artisan package:discover --ansi 2>/dev/null || true
 php artisan config:clear 2>/dev/null || true

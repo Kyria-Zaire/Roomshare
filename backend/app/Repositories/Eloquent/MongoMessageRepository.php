@@ -54,4 +54,21 @@ class MongoMessageRepository implements MessageRepositoryInterface
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
     }
+
+    /**
+     * Supprime un message si l'utilisateur en est l'auteur.
+     */
+    public function deleteOwnMessage(string $messageId, string $userId): bool
+    {
+        $message = $this->model
+            ->where('_id', $messageId)
+            ->where('sender_id', $userId)
+            ->first();
+
+        if (! $message) {
+            return false;
+        }
+
+        return (bool) $message->delete();
+    }
 }

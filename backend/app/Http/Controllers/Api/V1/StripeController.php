@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PaymentConfirmationMail;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Stripe\Checkout\Session as StripeSession;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Stripe;
@@ -129,9 +131,12 @@ class StripeController extends Controller
             return response()->json(['error' => 'Invalid signature'], 400);
         }
 
-        if ($event->type === 'checkout.session.completed') {
-            $this->handleCheckoutCompleted($event->data->object);
-        }
+        match ($event->type) {
+            'checkout.session.completed'    => $this->handleCheckoutCompleted($event->data->object),
+            'customer.subscription.deleted' => $this->handleSubscriptionDeleted($event->data->object),
+            'invoice.payment_failed'        => $this->handlePaymentFailed($event->data->object),
+            default                         => null,
+        };
 
         return response()->json(['received' => true]);
     }
@@ -191,6 +196,107 @@ class StripeController extends Controller
                 'duration_days' => $durationDays,
                 'stripe_session_id' => $session->id,
             ]),
+        ]);
+
+        // Email de confirmation de paiement
+        try {
+            Mail::to($user->email)->send(new PaymentConfirmationMail(
+                userName: $user->name,
+                planLabel: self::PLAN_LABELS[$planType] ?? $planType,
+                amount: $amount,
+                currency: strtoupper($session->currency ?? 'eur'),
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('PaymentConfirmationMail failed', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * customer.subscription.deleted — Abonnement Pro résilié.
+     *
+     * Retrouve l'utilisateur via la Transaction liée au subscription_id
+     * et révoque son accès Pro.
+     */
+    private function handleSubscriptionDeleted(object $subscription): void
+    {
+        $subscriptionId = $subscription->id ?? null;
+
+        if (! $subscriptionId) {
+            Log::warning('Stripe subscription.deleted : subscription id manquant');
+            return;
+        }
+
+        $transaction = Transaction::where('stripe_payment_id', $subscriptionId)
+            ->where('type', Transaction::TYPE_PRO_SUB)
+            ->first();
+
+        if (! $transaction) {
+            Log::warning('Stripe subscription.deleted : transaction introuvable', ['subscription_id' => $subscriptionId]);
+            return;
+        }
+
+        $user = User::find($transaction->user_id);
+
+        if (! $user) {
+            Log::warning('Stripe subscription.deleted : utilisateur introuvable', ['user_id' => $transaction->user_id]);
+            return;
+        }
+
+        $user->is_pro = false;
+        $user->save();
+
+        Log::info('Stripe subscription.deleted : accès Pro révoqué', ['user_id' => $transaction->user_id]);
+    }
+
+    /**
+     * invoice.payment_failed — Échec de paiement récurrent.
+     *
+     * Retrouve l'utilisateur via l'ID d'abonnement de la facture
+     * et suspend son accès Pro. Log l'échec pour suivi.
+     */
+    private function handlePaymentFailed(object $invoice): void
+    {
+        $subscriptionId = $invoice->subscription ?? null;
+        $paymentIntentId = $invoice->payment_intent ?? null;
+        $stripeId = $subscriptionId ?? $paymentIntentId;
+
+        if (! $stripeId) {
+            Log::warning('Stripe invoice.payment_failed : aucun identifiant trouvable');
+            return;
+        }
+
+        $transaction = Transaction::where('stripe_payment_id', $stripeId)->first();
+
+        if (! $transaction) {
+            Log::warning('Stripe invoice.payment_failed : transaction introuvable', ['stripe_id' => $stripeId]);
+            return;
+        }
+
+        $user = User::find($transaction->user_id);
+
+        if (! $user) {
+            Log::warning('Stripe invoice.payment_failed : utilisateur introuvable', ['user_id' => $transaction->user_id]);
+            return;
+        }
+
+        // Suspendre l'accès Pro
+        $user->is_pro = false;
+        $user->save();
+
+        // Enregistrer l'échec dans les transactions
+        Transaction::create([
+            'user_id' => (string) $user->_id,
+            'amount' => (float) ($invoice->amount_due ?? 0) / 100,
+            'currency' => strtolower($invoice->currency ?? 'eur'),
+            'type' => $transaction->type,
+            'status' => Transaction::STATUS_FAILED,
+            'stripe_payment_id' => is_string($stripeId) ? $stripeId : (string) $stripeId,
+            'metadata' => ['reason' => 'payment_failed', 'invoice_id' => $invoice->id ?? null],
+        ]);
+
+        Log::warning('Stripe invoice.payment_failed : accès Pro suspendu', [
+            'user_id' => (string) $user->_id,
+            'stripe_id' => $stripeId,
         ]);
     }
 }

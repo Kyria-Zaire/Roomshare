@@ -14,11 +14,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withBroadcasting(
         __DIR__.'/../routes/channels.php',
-        ['prefix' => 'api/v1', 'middleware' => ['api']],
+        // auth:sanctum requis : seuls les utilisateurs authentifiés peuvent obtenir
+        // un token WebSocket. La closure channels.php vérifie ensuite la participation.
+        ['prefix' => 'api/v1', 'middleware' => ['api', 'auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'early.access' => \App\Http\Middleware\CheckEarlyAccess::class,
+            'admin'        => \App\Http\Middleware\EnsureAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

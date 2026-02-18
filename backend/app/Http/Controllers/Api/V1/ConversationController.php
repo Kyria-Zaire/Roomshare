@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
+use App\Models\Room;
 use App\Models\User;
 use App\Repositories\Contracts\ConversationRepositoryInterface;
 use App\Repositories\Contracts\MessageRepositoryInterface;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -62,13 +64,51 @@ class ConversationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'recipient_id' => 'required|string',
+            'recipient_id' => [
+                'required',
+                'string',
+                // MongoDB n'a pas de règle `exists:` native — validation manuelle.
+                // "system" est autorisé pour les annonces scrapées (propriétaire fictif).
+                // Sinon, doit être un ObjectId 24 hex valide qui existe en base.
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    if ($value === 'system') {
+                        return;
+                    }
+                    if (! preg_match('/^[0-9a-f]{24}$/i', $value)) {
+                        $fail('L\'identifiant du destinataire est invalide.');
+                        return;
+                    }
+                    if (! User::where('_id', $value)->exists()) {
+                        $fail('Le destinataire spécifié n\'existe pas.');
+                    }
+                },
+            ],
             'room_id' => 'required|string',
             'room_title' => 'required|string|max:255',
             'initial_message' => 'nullable|string|max:2000',
         ]);
 
         $userId = (string) $request->user()->_id;
+        $authUser = $request->user();
+
+        // ─── Guard Early Access ─────────────────────────────────────────
+        // Si la room a moins de 24h, seuls Pro / Pass Étudiant actif / propriétaire
+        // peuvent initier un contact. Bloquer ici empêche le bypass via Postman direct.
+        $room = Room::find($validated['room_id']);
+        if ($room && $room->created_at && $room->created_at->gt(Carbon::now()->subHours(24))) {
+            $isOwner    = (string) $authUser->_id === (string) $room->owner_id;
+            $isPro      = (bool) ($authUser->is_pro ?? false);
+            $hasPass    = $authUser->hasActivePass();
+
+            if (! $isOwner && ! $isPro && ! $hasPass) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Un Pass Étudiant est requis pour contacter le propriétaire d\'une annonce publiée depuis moins de 24h.',
+                    'code'    => 'early_access_required',
+                ], 403);
+            }
+        }
+        // ───────────────────────────────────────────────────────────────
 
         // Vérifier si la conversation existe déjà (même participants + même room_id)
         $existingConversation = $this->conversationRepo->findByUser($userId)

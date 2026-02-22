@@ -30,7 +30,8 @@ export function getEcho(): Echo<"pusher"> {
       wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || "localhost",
       wsPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 8080,
       wssPort: Number(process.env.NEXT_PUBLIC_REVERB_PORT) || 8080,
-      forceTLS: false,
+      // forceTLS piloté par NEXT_PUBLIC_REVERB_SCHEME (http → false, https → true)
+      forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME || "http") === "https",
       enabledTransports: ["ws", "wss"],
       disableStats: true,
       cluster: "mt1",

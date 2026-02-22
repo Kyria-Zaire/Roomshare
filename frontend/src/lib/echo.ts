@@ -40,6 +40,10 @@ export function getEcho(): Echo<"pusher"> {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       },
     });
+
+    // Debug : expose l'instance dans la console navigateur (à retirer en prod)
+    // Usage : window.Echo.connector.pusher.connection.state
+    (window as unknown as Record<string, unknown>).Echo = echoInstance;
   }
 
   return echoInstance;

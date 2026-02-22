@@ -65,12 +65,15 @@ services:
       - DB_PORT=27017
       - DB_DATABASE=roomshare
       - BROADCAST_CONNECTION=reverb
-      - REVERB_HOST=0.0.0.0
+      # REVERB_HOST = hostname public attendu dans le header "Host" des connexions WS entrantes.
+      # 0.0.0.0 causait ERR_CONNECTION_CLOSED (navigateur envoie Host: localhost:8080 ≠ 0.0.0.0).
+      - REVERB_HOST=localhost
       - REVERB_PORT=8080
       - REVERB_SCHEME=http
       - REVERB_APP_ID=roomshare
       - REVERB_APP_KEY=roomshare-key
       - REVERB_APP_SECRET=roomshare-secret
+      # REVERB_SERVER_HOST = interface d'écoute (0.0.0.0 = toutes les interfaces du conteneur)
       - REVERB_SERVER_HOST=0.0.0.0
       - REVERB_SERVER_PORT=8080
     depends_on:
